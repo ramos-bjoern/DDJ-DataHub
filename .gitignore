@@ -1,3 +1,14 @@
 .env
 *.log
 uploads/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
