@@ -24,22 +24,23 @@ services:
       - internal
 
   pgbouncer:
-    image: bitnami/pgbouncer:1.23.1
+    image: edoburu/pgbouncer:v1.23.1-p3
     restart: unless-stopped
     environment:
-      POSTGRESQL_HOST: postgres
-      POSTGRESQL_PORT: 5432
-      POSTGRESQL_DATABASE: ${PGBOUNCER_DATABASE:-datahub}
-      POSTGRESQL_USERNAME: ${PGBOUNCER_AUTH_USER:-datahub_user}
-      POSTGRESQL_PASSWORD: ${PGBOUNCER_AUTH_PASSWORD}
-      PGBOUNCER_POOL_MODE: ${PGBOUNCER_POOL_MODE:-transaction}
-      PGBOUNCER_MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-200}
-      PGBOUNCER_DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-20}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${PGBOUNCER_DATABASE:-datahub}
+      DB_USER: ${PGBOUNCER_AUTH_USER:-datahub_user}
+      DB_PASSWORD: ${PGBOUNCER_AUTH_PASSWORD}
+      POOL_MODE: ${PGBOUNCER_POOL_MODE:-transaction}
+      MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-200}
+      DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-20}
+      AUTH_TYPE: scram-sha-256
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -p 6432 -U ${PGBOUNCER_AUTH_USER:-datahub_user}"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U ${PGBOUNCER_AUTH_USER:-datahub_user}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -87,6 +88,7 @@ services:
       CACHE_ENABLED: "true"
       CACHE_STORE: redis
       CACHE_REDIS: redis://redis:6379
+      REDIS: redis://redis:6379
       CACHE_TTL: "30"
 
       CORS_ENABLED: "true"
@@ -104,7 +106,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8055/server/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8055/server/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -121,14 +123,14 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8090:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       directus:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/server/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/server/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
