@@ -223,10 +223,51 @@ DDJ-DataHub/
 
 ---
 
+## Automatisierung & Berechnungen (Directus Flows)
+
+Directus hat einen eingebauten visuellen Workflow-Builder — **Flows**. Damit können Automationen und Berechnungen über die Admin-GUI konfiguriert werden, ohne Code zu deployen.
+
+### Muster: Cron-basierte Berechnung
+
+```
+Trigger: Cron (z.B. täglich 06:00)
+  → Operation: Lese Rohdaten aus Collection(s)
+  → Operation: Berechnung (JS-Script oder PostgreSQL-Funktion)
+  → Operation: Schreibe Ergebnis in Ergebnis-Collection
+  → Ergebnis ist sofort über /items/<ergebnis_collection> abrufbar
+```
+
+### Was Flows können
+
+- **Trigger:** Cron-Schedule, Daten-Event (onCreate, onUpdate), Webhook, manuell über GUI-Button
+- **Operationen:** Collections lesen/schreiben, HTTP-Request an externe APIs, JavaScript ausführen, bedingte Verzweigungen, Schleifen
+- **GUI:** Drag & Drop im Directus Admin — kein Deployment, kein Code-Editor nötig
+- **Ergebnis-Collections:** Berechnungsergebnisse landen in normalen Directus-Collections → automatisch über REST/GraphQL-API abrufbar, cachebar über Redis
+
+### Grenze: komplexe SQL-Berechnungen
+
+Für aufwändige Berechnungen über mehrere große Tabellen (Joins, Window-Functions, Aggregationen) ist eine **PostgreSQL-Funktion oder -View** sauberer als ein Flow-JS-Script. Der Flow ruft die Funktion dann auf und schreibt das Ergebnis weg.
+
+```sql
+-- Beispiel: PostgreSQL-Funktion, aufrufbar aus einem Flow
+CREATE OR REPLACE FUNCTION berechne_ergebnis()
+RETURNS void AS $$
+  INSERT INTO ergebnisse (wert, berechnet_am)
+  SELECT complex_calc, NOW() FROM rohdaten ...;
+$$ LANGUAGE sql;
+```
+
+### Rollen-Integration
+
+- **Data-Manager** kann Flows anlegen und konfigurieren
+- **Data-Editor** kann Flows manuell triggern (über GUI-Button), aber nicht bearbeiten
+- **Administrator** hat vollen Zugriff auf alle Flows
+
+---
+
 ## Offene Punkte / spätere Erweiterungen
 
 - TLS-Zertifikat: Let's Encrypt via Certbot oder Cloud Load Balancer
 - Backup-Strategie für PostgreSQL-Volume
 - Monitoring: Healthcheck-Endpoints sind vorbereitet, Anbindung an Alerting offen
 - Mehrsprachigkeit in Directus-Collections (Directus hat eingebaute i18n-Unterstützung)
-- Directus-Flows für automatische Benachrichtigungen bei neuen Daten
