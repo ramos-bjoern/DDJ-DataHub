@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WM-Trikots bewerten · DFB-Elf</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blau:    #4F80FF;
+    --blau-h:  #3A6FEE;
+    --grau:    #EFF3F5;
+    --border:  #D9E2EA;
+    --subtext: #5E7285;
+    --bg:      #ffffff;
+    --fg:      #0F151A;
+    --r:       12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --grau:   #2A3038;
+      --border: #2C3A47;
+      --subtext:#8AA0B4;
+      --bg:     #1A1F25;
+      --fg:     #E8ECF0;
+    }
+  }
+
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .subline {
+    font-size: 13px;
+    color: var(--subtext);
+    margin-bottom: 20px;
+  }
+
+  /* Fortschrittsbalken */
+  .progress-bar {
+    height: 4px;
+    background: var(--grau);
+    border-radius: 99px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--blau);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+  }
+
+  /* Trikot-Karte */
+  .card {
+    background: var(--grau);
+    border-radius: var(--r);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .card-img {
+    width: 100%;
+    aspect-ratio: 4/5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--grau);
+    padding: 32px;
+  }
+  .card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .card-info {
+    padding: 14px 16px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-jahr {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .card-zaehler {
+    font-size: 13px;
+    color: var(--subtext);
+  }
+
+  /* Slider */
+  .slider-wrap {
+    margin-bottom: 20px;
+  }
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--subtext);
+    margin-bottom: 8px;
+  }
+  .slider-wert {
+    text-align: center;
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--blau);
+    line-height: 1;
+    margin-bottom: 10px;
+    transition: color 0.2s;
+  }
+  .slider-wert .einheit {
+    font-size: 16px;
+    color: var(--subtext);
+    font-weight: 400;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--grau);
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--blau);
+    box-shadow: 0 2px 8px rgba(79,128,255,0.4);
+    cursor: grab;
+    transition: background 0.2s, transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+    cursor: grabbing;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--blau);
+    border: none;
+    cursor: grab;
+  }
+
+  /* Emojis je Wert */
+  .emoji { font-size: 28px; text-align: center; margin-bottom: 6px; }
+
+  /* Buttons */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--r);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--blau); color: #fff; }
+  .btn-primary:hover { background: var(--blau-h); }
+  .btn-skip {
+    background: transparent;
+    color: var(--subtext);
+    font-size: 13px;
+    margin-top: 8px;
+    padding: 10px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .btn-skip:hover { color: var(--fg); }
+
+  /* Ergebnis */
+  .ergebnis { display: none; }
+  .ergebnis.sichtbar { display: block; }
+  .voting.versteckt { display: none; }
+
+  .ergebnis h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .ergebnis .sub {
+    font-size: 13px;
+    color: var(--subtext);
+    margin-bottom: 24px;
+  }
+
+  .rangliste { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .rang-item {
+    display: grid;
+    grid-template-columns: 28px 60px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    background: var(--grau);
+    border-radius: var(--r);
+    padding: 10px 14px;
+  }
+  .rang-item.top1 { background: #FFF8E1; border: 1px solid #FFD600; }
+  @media (prefers-color-scheme: dark) {
+    .rang-item.top1 { background: rgba(255,214,0,0.1); border-color: rgba(255,214,0,0.4); }
+  }
+  .rang-nr {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--blau);
+    text-align: center;
+  }
+  .rang-nr.gold { color: #F9A825; }
+  .rang-img {
+    width: 60px;
+    height: 75px;
+    object-fit: contain;
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 4px;
+  }
+  .rang-info { min-width: 0; }
+  .rang-jahr { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .rang-stimmen { font-size: 12px; color: var(--subtext); }
+  .rang-avg {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--blau);
+    white-space: nowrap;
+  }
+  .rang-avg .sterne { font-size: 13px; color: var(--subtext); }
+
+  .btn-nochmal {
+    background: var(--grau);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: var(--r);
+    font-size: 14px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-nochmal:hover { background: var(--border); }
+
+  .lade-hint {
+    text-align: center;
+    color: var(--subtext);
+    font-size: 13px;
+    padding: 20px 0;
+  }
+
+  .dein-vote {
+    font-size: 13px;
+    color: var(--subtext);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .dein-vote strong { color: var(--fg); }
+</style>
+</head>
+<body>
+
+<div class="voting" id="voting">
+  <h1>WM-Trikots der DFB-Elf bewerten</h1>
+  <p class="subline">Wie gut gefällt dir das Trikot? Schiebe den Regler und bewerte!</p>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress" style="width:0%"></div>
+  </div>
+
+  <div class="card" id="card">
+    <div class="card-img">
+      <img id="trikot-img" src="" alt="" />
+    </div>
+    <div class="card-info">
+      <span class="card-jahr" id="trikot-jahr"></span>
+      <span class="card-zaehler" id="zaehler"></span>
+    </div>
+  </div>
+
+  <div class="slider-wrap">
+    <div class="emoji" id="emoji">😐</div>
+    <div class="slider-wert"><span id="slider-wert">2.5</span> <span class="einheit">/ 5</span></div>
+    <input type="range" id="slider" min="0" max="5" step="0.5" value="2.5" />
+    <div class="slider-labels"><span>gar nicht</span><span>okay</span><span>Lieblings-Trikot!</span></div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-bewerten">Bewerten & weiter →</button>
+  <button class="btn btn-skip" id="btn-skip">Überspringen</button>
+</div>
+
+<div class="ergebnis" id="ergebnis">
+  <h2>Das Community-Ergebnis</h2>
+  <p class="sub" id="ergebnis-sub"></p>
+  <div class="dein-vote" id="dein-vote"></div>
+  <div id="rangliste" class="rangliste"><div class="lade-hint">Lade Ergebnisse…</div></div>
+  <button class="btn-nochmal" id="btn-nochmal">↻ Nochmal bewerten</button>
+</div>
+
+<script>
+"use strict";
+
+const API   = 'http://localhost:8090';
+const TOKEN = 'widget_trikot_2026_readonly';
+const H     = { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
+
+const EMOJIS = { 0: '😞', 0.5: '😕', 1: '😐', 1.5: '🙂', 2: '😊', 2.5: '👍',
+                 3: '😄', 3.5: '😍', 4: '🔥', 4.5: '⭐', 5: '🏆' };
+
+const TRIKOTS = [
+  { id: 33, jahr: 1982, bild: 'f888b21e-ecaf-4995-9111-20116e3f4bc8' },
+  { id: 34, jahr: 1986, bild: 'd3dac87a-8598-4bd3-84fc-566b3b8850ec' },
+  { id: 35, jahr: 1990, bild: '085f4475-bb28-4c59-92a9-591634bdf738' },
+  { id: 36, jahr: 1994, bild: '53de5d43-3d35-4970-9958-0e46f5b3ff7d' },
+  { id: 37, jahr: 1998, bild: 'bf451aa6-3f1d-4a86-8257-aaf9843611bf' },
+  { id: 38, jahr: 2002, bild: '77c43563-fa2d-49a1-b4af-546d2eb3d053' },
+  { id: 39, jahr: 2006, bild: '1d5cfcf6-e014-40aa-bed5-929b560e2b8c' },
+  { id: 40, jahr: 2010, bild: '639fc991-1701-46b7-9033-e0171de791f5' },
+  { id: 41, jahr: 2014, bild: '9c203940-f0f9-496f-ad14-e1a9e1aba7ef' },
+  { id: 42, jahr: 2018, bild: '850177b0-0096-4257-8548-87b970b30cc1' },
+];
+
+let index = 0;
+const meineVotes = []; // { trikot_id, bewertung }
+
+const slider     = document.getElementById('slider');
+const sliderWert = document.getElementById('slider-wert');
+const emojiEl    = document.getElementById('emoji');
+const imgEl      = document.getElementById('trikot-img');
+const jahrEl     = document.getElementById('trikot-jahr');
+const zaehlerEl  = document.getElementById('zaehler');
+const progressEl = document.getElementById('progress');
+const votingEl   = document.getElementById('voting');
+const ergebnisEl = document.getElementById('ergebnis');
+
+function zeigeTrikot() {
+  const t = TRIKOTS[index];
+  imgEl.src = `${API}/assets/${t.bild}`;
+  imgEl.alt = `DFB-Trikot ${t.jahr}`;
+  jahrEl.textContent = t.jahr;
+  zaehlerEl.textContent = `${index + 1} / ${TRIKOTS.length}`;
+  progressEl.style.width = `${(index / TRIKOTS.length) * 100}%`;
+  slider.value = 2.5;
+  sliderWert.textContent = '2.5';
+  emojiEl.textContent = EMOJIS[2.5];
+}
+
+slider.addEventListener('input', () => {
+  const v = parseFloat(slider.value);
+  sliderWert.textContent = v.toFixed(1);
+  emojiEl.textContent = EMOJIS[v] || '👍';
+});
+
+async function abstimmen(bewertung) {
+  const t = TRIKOTS[index];
+  meineVotes.push({ trikot_id: t.id, bewertung });
+
+  // Fire & forget — nicht auf Antwort warten
+  fetch(`${API}/items/trikots_voting`, {
+    method: 'POST', headers: H,
+    body: JSON.stringify({ trikot_id: t.id, bewertung }),
+  }).catch(() => {});
+
+  index++;
+  if (index < TRIKOTS.length) {
+    zeigeTrikot();
+  } else {
+    zeigeErgebnis();
+  }
+}
+
+document.getElementById('btn-bewerten').addEventListener('click', () => {
+  abstimmen(parseFloat(slider.value));
+});
+
+document.getElementById('btn-skip').addEventListener('click', () => {
+  index++;
+  if (index < TRIKOTS.length) {
+    zeigeTrikot();
+  } else {
+    zeigeErgebnis();
+  }
+});
+
+async function zeigeErgebnis() {
+  votingEl.classList.add('versteckt');
+  ergebnisEl.classList.add('sichtbar');
+  progressEl.style.width = '100%';
+
+  // Meine Top-Bewertung anzeigen
+  const top = [...meineVotes].sort((a, b) => b.bewertung - a.bewertung)[0];
+  const topTrikot = top ? TRIKOTS.find(t => t.id === top.trikot_id) : null;
+  if (topTrikot) {
+    document.getElementById('dein-vote').innerHTML =
+      `Dein Lieblings-Trikot: <strong>${topTrikot.jahr}</strong> (${top.bewertung.toFixed(1)} ⭐)`;
+  }
+
+  // Ergebnisse laden
+  try {
+    const res = await fetch(
+      `${API}/items/trikots_voting?aggregate%5Bavg%5D=bewertung&aggregate%5Bcount%5D=*&groupBy%5B%5D=trikot_id&sort%5B%5D=-avg.bewertung&limit=10`,
+      { headers: H }
+    );
+    const json = await res.json();
+    const data = (json.data || []).filter(r => r.trikot_id >= 33 && r.trikot_id <= 42);
+
+    const gesamt = data.reduce((s, r) => s + parseInt(r.count), 0);
+    document.getElementById('ergebnis-sub').textContent =
+      `Basierend auf ${gesamt.toLocaleString('de-DE')} Bewertungen`;
+
+    const trikotById = {};
+    TRIKOTS.forEach(t => { trikotById[t.id] = t; });
+
+    document.getElementById('rangliste').innerHTML = data.map((r, i) => {
+      const t = trikotById[r.trikot_id];
+      if (!t) return '';
+      const avg = parseFloat(r.avg?.bewertung || 0).toFixed(1);
+      const stimmen = parseInt(r.count).toLocaleString('de-DE');
+      const gold = i === 0 ? ' top1' : '';
+      const nrClass = i === 0 ? ' gold' : '';
+      return `
+        <div class="rang-item${gold}">
+          <span class="rang-nr${nrClass}">${i === 0 ? '🏆' : i + 1}</span>
+          <img class="rang-img" src="${API}/assets/${t.bild}" alt="Trikot ${t.jahr}" />
+          <div class="rang-info">
+            <div class="rang-jahr">${t.jahr}</div>
+            <div class="rang-stimmen">${stimmen} Bewertungen</div>
+          </div>
+          <div class="rang-avg">${avg} <span class="sterne">/ 5</span></div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('rangliste').innerHTML =
+      '<div class="lade-hint">Ergebnisse konnten nicht geladen werden.</div>';
+  }
+}
+
+document.getElementById('btn-nochmal').addEventListener('click', () => {
+  index = 0;
+  meineVotes.length = 0;
+  ergebnisEl.classList.remove('sichtbar');
+  votingEl.classList.remove('versteckt');
+  zeigeTrikot();
+});
+
+// Start
+zeigeTrikot();
+</script>
+</body>
+</html>
