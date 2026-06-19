@@ -106,7 +106,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8055/server/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8055/server/ping || exit 1"]
       interval: 20s
       timeout: 15s
       retries: 15
@@ -130,7 +130,7 @@ services:
       directus:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/server/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/server/ping || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
