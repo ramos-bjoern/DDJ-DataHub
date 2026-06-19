@@ -3,11 +3,20 @@
 services:
 
   directus:
+    env_file:
+      - .env
     environment:
       PUBLIC_URL: "https://datahub.rndtech.de"
       CORS_ORIGIN: "https://datahub.rndtech.de,https://rnd.de,https://*.rnd.de"
       CACHE_TTL: "60"
       LOG_LEVEL: "warn"
+      EMAIL_FROM: "no-reply@rndtech.de"
+      EMAIL_TRANSPORT: "smtp"
+      EMAIL_SMTP_HOST: "email-smtp.eu-central-1.amazonaws.com"
+      EMAIL_SMTP_PORT: "587"
+      EMAIL_SMTP_SECURE: "false"
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER}
+      EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD}
 
   nginx:
     ports:
