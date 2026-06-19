@@ -71,7 +71,7 @@ services:
       - internal
 
   directus:
-    image: directus/directus:11.3.5
+    image: directus/directus:12.0.2
     restart: unless-stopped
     environment:
       SECRET: ${SECRET}
