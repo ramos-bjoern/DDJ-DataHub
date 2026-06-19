@@ -1,0 +1,19 @@
+# Production-Overrides für AWS EC2
+# Verwendung: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+
+  directus:
+    environment:
+      PUBLIC_URL: "https://datahub.rndtech.de"
+      CORS_ORIGIN: "https://datahub.rndtech.de,https://rnd.de,https://*.rnd.de"
+      CACHE_TTL: "60"
+      LOG_LEVEL: "warn"
+
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/lib/letsencrypt:/var/lib/letsencrypt:ro
