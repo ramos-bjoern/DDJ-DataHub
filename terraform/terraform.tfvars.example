@@ -1,0 +1,8 @@
+aws_region        = "eu-central-1"
+aws_profile       = "rndtech-sso"
+project           = "ddj-datahub"
+environment       = "production"
+domain            = "datahub.rndtech.de"
+ec2_instance_type = "t4g.medium"
+ec2_key_name      = "REPLACE_ME_your_key_pair_name"
+allowed_ssh_cidr  = "REPLACE_ME_your_office_ip/32"
